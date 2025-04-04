@@ -1,0 +1,14 @@
+# Ignorar ambientes virtuais
+venv-agent/
+venv/
+
+# Ignorar arquivos temporários
+*.pyc
+__pycache__/
+
+# Ignorar arquivos de configuração do sistema
+.DS_Store
+Thumbs.db
+
+# Ignorar arquivos de configuração com chaves secretas
+.env

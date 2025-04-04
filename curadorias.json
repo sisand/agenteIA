@@ -1,0 +1,9 @@
+[
+  {
+    "ticket_id": 210288,
+    "curador": "Curador",
+    "question": "Estou enfrentando problemas para acessar o sistema/workspace. Como posso resolver esse problema?",
+    "answer": "A solu\u00e7\u00e3o passa pelas seguintes etapas: primeiro, v\u00e1 at\u00e9 o cadastro de usu\u00e1rios no workspace. Depois, selecione o produto 'Vision 2.0'. Uma tela ser\u00e1 aberta com o campo 'Login Vision Cloud 2.0'. Ao clicar neste campo, ser\u00e1 exibida uma lista com os usu\u00e1rios do Vision para vincula\u00e7\u00e3o. Ap\u00f3s selecionar o usu\u00e1rio desejado, confirme e salve as altera\u00e7\u00f5es.\n\nO problema pode ser decorrente de uma falha no v\u00ednculo entre o usu\u00e1rio e o sistema, ou seja, o usu\u00e1rio em quest\u00e3o pode n\u00e3o estar corretamente associado ao Vision 2.0 no workspace.\n\nAp\u00f3s aplica\u00e7\u00e3o da solu\u00e7\u00e3o, o acesso ao sistema/workspace deve ser restaurado para o usu\u00e1rio referido.\n\nPara evitar esse tipo de problema no futuro, certifique-se que cada novo usu\u00e1rio seja corretamente vinculado aos devidos sistemas no momento do seu cadastro, seguindo os passos da solu\u00e7\u00e3o indicada.",
+    "data": "2025-03-25T22:26:55.296344"
+  }
+]
