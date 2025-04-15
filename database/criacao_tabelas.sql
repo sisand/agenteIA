@@ -1,120 +1,108 @@
--- Certifique-se de que a extensão pgvector está habilitada
-
+-- Extensões necessárias
 CREATE EXTENSION IF NOT EXISTS vector;
--- Tabela para armazenar as mensagens do usuário e do assistente
 
+-- Remover tabelas existentes
+DROP TABLE IF EXISTS mensagens CASCADE;
+DROP TABLE IF EXISTS sessoes CASCADE;
+DROP TABLE IF EXISTS feedbacks CASCADE;
+DROP TABLE IF EXISTS usuarios CASCADE;
+DROP TABLE IF EXISTS prompts CASCADE;
+DROP TABLE IF EXISTS parametros CASCADE;
 
-drop table if exists mensagens;
-CREATE TABLE mensagens (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    usuario_id text NOT NULL,
-    pergunta text NOT NULL,
-    resposta text NOT NULL,
-    embedding vector,  -- tipo USER-DEFINED (extensão pgvector)
-    created_at timestamptz DEFAULT now()
-);
-
-create index idx_mensagens_usuario on mensagens(usuario_id);
-
-
--- Remove a tabela mensagens (se já existir)
-drop table if exists mensagens;
-
--- Tabela de sessões
-create table sessoes (
-    id uuid primary key default gen_random_uuid(),
-    usuario_id text not null,
-    inicio timestamptz default now(),
-    fim timestamptz
-);
-
-create index idx_sessoes_usuario on sessoes(usuario_id);
-
--- Tabela de mensagens com relação à sessão
-create table mensagens (
-    id uuid primary key default gen_random_uuid(),
-    sessao_id uuid references sessoes(id),
-    usuario_id text not null,
-    pergunta text not null,
-    resposta text not null,
-    embedding vector,  -- pgvector
-    created_at timestamptz default now()
-);
-
--- Índices para otimizar consultas
-create index idx_mensagens_usuario on mensagens(usuario_id);
-create index idx_mensagens_sessao on mensagens(sessao_id);
-
-
-
-
-
-
--- Tabela para armazenar feedbacks das respostas
-CREATE TABLE IF NOT EXISTS feedbacks (
-    id SERIAL PRIMARY KEY,
-    pergunta TEXT NOT NULL,
-    resposta TEXT NOT NULL,
-    comentario TEXT,
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-
--- Tabela de usuários (identificados pelo login do workspace)
+-- Tabela de usuários
 CREATE TABLE usuarios (
     id SERIAL PRIMARY KEY,
     login VARCHAR(100) UNIQUE NOT NULL,
     nome VARCHAR(100),
-    criado_em TIMESTAMP DEFAULT NOW()
+    criado_em TIMESTAMP DEFAULT now()
 );
 
-# --- SCRIPT SQL PARA SUPABASE ---
+-- Tabela de sessões
+CREATE TABLE sessoes (
+    id SERIAL PRIMARY KEY,
+    usuario_id INTEGER REFERENCES usuarios(id),
+    inicio TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fim TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_sessoes_usuario ON sessoes(usuario_id);
 
+-- Tabela de mensagens
+CREATE TABLE mensagens (
+    id SERIAL PRIMARY KEY,
+    sessao_id INTEGER REFERENCES sessoes(id) ON DELETE CASCADE,
+    usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    pergunta TEXT NOT NULL,
+    resposta TEXT NOT NULL,
+    embedding VECTOR,
+    classificacao_huggingface TEXT,
+    pontuacao_classificacao NUMERIC,
+    pipeline_usado TEXT,
+    acao_langchain TEXT,
+    tipo_resposta TEXT,
+    contexto_ativo TEXT,
+    tags TEXT[],
+    created_at TIMESTAMP DEFAULT now()
+);
+CREATE INDEX idx_mensagens_usuario ON mensagens(usuario_id);
+CREATE INDEX idx_mensagens_sessao ON mensagens(sessao_id);
+CREATE INDEX idx_classificacao ON mensagens(classificacao_huggingface);
+CREATE INDEX idx_tipo_resposta ON mensagens(tipo_resposta);
+
+-- Tabela de feedbacks
+CREATE TABLE feedbacks (
+    id SERIAL PRIMARY KEY,
+    pergunta TEXT NOT NULL,
+    resposta TEXT NOT NULL,
+    comentario TEXT,
+    tipo TEXT,
+    usuario_id INTEGER REFERENCES usuarios(id),
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabela de prompts
 CREATE TABLE prompts (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  nome text NOT NULL,
-  descricao text,
-  conteudo text NOT NULL,
-  ativo boolean DEFAULT true,
-  criado_em timestamp with time zone DEFAULT now(),
-  atualizado_em timestamp with time zone DEFAULT now()
+    id SERIAL PRIMARY KEY,
+    nome TEXT NOT NULL,
+    descricao TEXT,
+    conteudo TEXT NOT NULL,
+    ativo BOOLEAN DEFAULT TRUE,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Exemplo de insert inicial (pode ser feito via Supabase Studio)
+-- Prompts padrão
 INSERT INTO prompts (nome, descricao, conteudo)
 VALUES (
   'padrao',
   'Prompt principal utilizado pelo assistente da Sisand',
-  $$
-  Você é um assistente da Sisand, que atua com acolhimento, didática e foco em orientar.
+  $$Você é um assistente da Sisand, que atua com acolhimento, didática e foco em orientar.
 
-  Histórico recente da conversa:
-  {historico_texto}
+Histórico recente da conversa:
+{historico_texto}
 
-  Abaixo estão alguns artigos técnicos sobre o sistema da Sisand:
-  {context}
+Abaixo estão alguns artigos técnicos sobre o sistema da Sisand:
+{context}
 
-  Com base nesses artigos e no histórico da conversa, responda de forma clara e útil à seguinte pergunta:
+Com base nesses artigos e no histórico da conversa, responda de forma clara e útil à seguinte pergunta:
 
-  {question}
+{question}
 
-  ✅ Estruture a resposta com:
-  - Saudação inicial e acolhimento.
-  - Passo a passo claro e detalhado.
-  - Explique o objetivo ou a importância de cada passo.
-  - Dica prática no final.
-  - Encerramento simpático e com canal de suporte.
+✅ Estruture a resposta com:
+- Saudação inicial e acolhimento.
+- Passo a passo claro e detalhado.
+- Explique o objetivo ou a importância de cada passo.
+- Dica prática no final.
+- Encerramento simpático e com canal de suporte.
 
-  Não repita trechos idênticos dos artigos. Reescreva com leveza, clareza e foco em orientar.
-  $$
+Não repita trechos idênticos dos artigos. Reescreva com leveza, clareza e foco em orientar.$$
 );
 
--- Curadoria
-INSERT INTO prompts (nome, descricao, conteudo, ativo)
+INSERT INTO prompts (nome, descricao, conteudo)
 VALUES (
   'curadoria',
   'Prompt usado na geração estruturada de curadorias via GPT',
-  'Você é um especialista em suporte técnico de sistemas ERP para concessionárias.
+  $$Você é um especialista em suporte técnico de sistemas ERP para concessionárias.
 
 Com base no resumo a seguir, gere uma estrutura formal com os seguintes campos:
 
@@ -136,33 +124,30 @@ Responda apenas neste formato JSON:
   "diagnostico": "...",
   "resultado": "...",
   "dica": "..."
-}
-',
-  true
+}$$
 );
 
-create table if not exists parametros (
-  nome text primary key,
-  valor text not null,
-  atualizado_em timestamp with time zone default timezone('utc'::text, now())
+-- Tabela de parâmetros
+CREATE TABLE parametros (
+    nome TEXT PRIMARY KEY,
+    valor TEXT NOT NULL,
+    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-
-C-- Script de criação da função match_mensagens para Supabase (PostgreSQL + pgvector)
-
+-- Função para busca semântica
 DROP FUNCTION IF EXISTS match_mensagens(vector, double precision);
 
 CREATE OR REPLACE FUNCTION match_mensagens(
-    embedding_input vector,
-    min_similarity float8
+    embedding_input VECTOR,
+    min_similarity FLOAT8
 )
 RETURNS TABLE (
-    id uuid,
-    usuario_id text,
-    pergunta text,
-    resposta text,
-    similarity float8,
-    created_at timestamptz  -- tipo atualizado e correto
+    id INTEGER,
+    usuario_id INTEGER,
+    pergunta TEXT,
+    resposta TEXT,
+    similarity FLOAT8,
+    created_at TIMESTAMP
 ) AS $$
 BEGIN
     RETURN QUERY
@@ -172,7 +157,7 @@ BEGIN
         m.pergunta, 
         m.resposta, 
         1 - (m.embedding <=> embedding_input) AS similarity,
-        m.created_at  -- tipo compatível
+        m.created_at
     FROM mensagens AS m
     WHERE (1 - (m.embedding <=> embedding_input)) > min_similarity
     ORDER BY similarity DESC
@@ -180,6 +165,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
-
+-- Adicionar parâmetros para prompts padrão
+INSERT INTO parametros (nome, valor) VALUES
+('prompt_chat_padrao', 'padrao'),
+('prompt_curadoria_padrao', 'curadoria');
 

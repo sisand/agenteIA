@@ -1,0 +1,15 @@
+agenteIA/
+├── app/
+│   ├── __init__.py
+│   ├── config.py              # 🔐 Carrega variáveis de ambiente (API Keys, URLs)
+│   ├── clients.py             # 🔌 Inicializa e fecha conexões (Weaviate, OpenAI)
+│   ├── langchain_chain.py     # 🧠 Cria a qa_chain com retriever + LLM + memória
+│   └── routes/
+│       └── ask_langchain.py   # 🔁 Rota POST /ask_langchain (usa qa_chain)
+├── main.py                    # 🚀 Inicializa FastAPI, conecta os clients, inclui as rotas
+├── requirements.txt           # 📦 Dependências do projeto
+└── .env                       # 🔐 Variáveis de ambiente (não subir pro GitHub)
+
+
+
+

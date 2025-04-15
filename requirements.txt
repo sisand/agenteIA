@@ -21,3 +21,6 @@ weaviate-client==4.10.0
 
 # Protobuf compatível com gRPC e streamlit
 protobuf>=5.26.1,<6.0
+
+
+langchain-community==0.0.33
